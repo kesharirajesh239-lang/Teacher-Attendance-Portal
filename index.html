@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crescent Public School - Teacher Attendance</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #eaf4ff, #f8f9fa);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .header h1 {
+        color: #0e3b85;
+        font-size: 30px;
+        margin-bottom: 8px;
+    }
+
+    .header p {
+        color: #566573;
+        font-size: 15px;
+    }
+
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 35px rgba(0,0,0,0.12);
+        border-top: 6px solid #0e3b85;
+    }
+
+    .icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: #eaf4ff;
+        color: #0e3b85;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto 18px;
+        font-size: 30px;
+    }
+
+    h2 {
+        text-align: center;
+        color: #0e3b85;
+        margin-bottom: 8px;
+    }
+
+    .help {
+        text-align: center;
+        color: #777;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
+
+    label {
+        display: block;
+        margin: 15px 0 7px;
+        font-weight: bold;
+        color: #273746;
+    }
+
+    select,
+    input {
+        width: 100%;
+        padding: 13px;
+        border: 1px solid #d5dbdb;
+        border-radius: 10px;
+        font-size: 16px;
+        background: white;
+        outline: none;
+    }
+
+    select:focus,
+    input:focus {
+        border-color: #0e3b85;
+        box-shadow: 0 0 0 3px rgba(14,59,133,0.10);
+    }
+
+    button {
+        width: 100%;
+        margin-top: 22px;
+        padding: 14px;
+        border: none;
+        border-radius: 25px;
+        background: #0e3b85;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #174ea6;
+    }
+
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    #message {
+        display: none;
+        margin-top: 18px;
+        padding: 13px;
+        border-radius: 10px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .success {
+        display: block !important;
+        background: #e8f7ee;
+        color: #147a3d;
+    }
+
+    .error {
+        display: block !important;
+        background: #fff0f0;
+        color: #b42318;
+    }
+
+    .footer {
+        text-align: center;
+        margin-top: 18px;
+        color: #777;
+        font-size: 12px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Crescent Public School</h1>
+        <p>Teacher Attendance Portal</p>
+    </div>
+
+    <div class="card">
+
+        <div class="icon">✓</div>
+
+        <h2>Mark Attendance</h2>
+
+        <p class="help">
+            Select your name and attendance status.
+        </p>
+
+        <label for="teacher">
+            Teacher
+        </label>
+
+        <select id="teacher">
+            <option value="">Loading teachers...</option>
+        </select>
+
+        <label for="status">
+            Attendance Status
+        </label>
+
+        <select id="status">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Leave">Leave</option>
+        </select>
+
+        <label for="note">
+            Note <span style="font-weight:normal;color:#777;">(Optional)</span>
+        </label>
+
+        <input
+            type="text"
+            id="note"
+            maxlength="150"
+            placeholder="Optional note"
+        >
+
+        <button
+            type="button"
+            id="submitBtn"
+            onclick="submitAttendance()"
+        >
+            Mark Attendance
+        </button>
+
+        <div id="message"></div>
+
+    </div>
+
+    <div class="footer">
+        Crescent Public School © 2026
+    </div>
+
+</div>
+
+
+<script>
+
+const ATTENDANCE_API_URL =
+"https://script.google.com/macros/s/AKfycbw_iV-jkG-pIZAwxEy7c0a_86OUA9BPWu2-WS7guVn4h_rgd50Sz1CvQfC--ihTZ-8/exec";
+
+
+/* =========================================
+   LOAD TEACHERS
+========================================= */
+
+async function loadTeachers() {
+
+    const teacherSelect =
+        document.getElementById("teacher");
+
+    try {
+
+        teacherSelect.innerHTML =
+            '<option value="">Loading teachers...</option>';
+
+        const response = await fetch(
+            ATTENDANCE_API_URL + "?action=teachers"
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(
+                data.message || "Unable to load teachers"
+            );
+        }
+
+        teacherSelect.innerHTML =
+            '<option value="">Select your name</option>';
+
+        data.teachers.forEach(function(teacher) {
+
+            const option =
+                document.createElement("option");
+
+            option.value = teacher.id;
+
+            option.textContent = teacher.name;
+
+            teacherSelect.appendChild(option);
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Teacher loading error:",
+            error
+        );
+
+        teacherSelect.innerHTML =
+            '<option value="">Unable to load teachers</option>';
+    }
+}
+
+
+/* =========================================
+   SUBMIT ATTENDANCE
+========================================= */
+
+async function submitAttendance() {
+
+    const teacher =
+        document.getElementById("teacher").value;
+
+    const status =
+        document.getElementById("status").value;
+
+    const note =
+        document.getElementById("note").value.trim();
+
+    const button =
+        document.getElementById("submitBtn");
+
+    const message =
+        document.getElementById("message");
+
+
+    message.className = "";
+
+    message.style.display = "none";
+
+
+    /* Teacher validation */
+
+    if (!teacher) {
+
+        message.textContent =
+            "Please select your name.";
+
+        message.className = "error";
+
+        return;
+    }
+
+
+    /* Disable button */
+
+    button.disabled = true;
+
+    button.textContent = "Saving...";
+
+
+    try {
+
+        const response = await fetch(
+            ATTENDANCE_API_URL,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "text/plain;charset=utf-8"
+                },
+
+                body: JSON.stringify({
+
+                    action: "markAttendance",
+
+                    teacherId: teacher,
+
+                    status: status,
+
+                    note: note
+
+                })
+            }
+        );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            throw new Error(
+                data.message ||
+                "Attendance could not be saved."
+            );
+        }
+
+
+        /* Success */
+
+        message.innerHTML =
+            "✓ Attendance saved successfully!<br>" +
+            "Time: " +
+            data.time;
+
+        message.className =
+            "success";
+
+
+        document.getElementById("note").value = "";
+
+
+    } catch (error) {
+
+        console.error(
+            "Attendance error:",
+            error
+        );
+
+        message.textContent =
+            error.message ||
+            "Something went wrong.";
+
+        message.className =
+            "error";
+
+    }
+
+
+    /* Enable button */
+
+    button.disabled = false;
+
+    button.textContent =
+        "Mark Attendance";
+}
+
+
+/* =========================================
+   START
+========================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        loadTeachers();
+
+    }
+);
+
+</script>
+
+</body>
+</html>
